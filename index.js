@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes")
-
+const docRoutes = require("./routes/docRoutes")
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -17,7 +17,7 @@ app.use("/api/auth", authRoutes)
 app.get("/", (req,res) =>{
   res.send("Api is running")
 })
-
+app.use("/api/docs", docRoutes)
 
 // Connect DB
 mongoose.connect(process.env.MONGO_URI, {
