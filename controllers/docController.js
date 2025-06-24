@@ -6,9 +6,11 @@ const uploadDocument = async (req, res) => {
       // if there is no file in req than it will give error
       return res.status(400).json({ msg: "No file uploaded" });
     }
+    
     const newDoc = new Document({
       // if there is a file, than map its attributes with schema
-      filename: req.file.originalname,
+      filename: req.file.filename,
+      originalname: req.file.originalname, // <-- add this
       filepath: req.file.path,
       user: req.user,
     });

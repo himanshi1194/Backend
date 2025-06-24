@@ -1,18 +1,21 @@
-const mongoose = require("mongoose")
-const upload = require("../middleware/upload")
+const mongoose = require("mongoose");
+const upload = require("../middleware/upload");
 
 const docSchema = new mongoose.Schema({
-    filename: String,
-    filepath: String, // file name and file path is the path where file stored
-    user:{
-        type: mongoose.Schema.Types.ObjectId, // user associated with document
-        ref: "User",
-        required: true
-    },
-    uploadedAt:{ // it will hold the timestamp when document is uploaded
-        type: Date,
-        default: Date.now
-    }
+  filename: String,
+  filepath: String, // file name and file path is the path where file stored
+  // Document.js
+  originalname: { type: String, required: true },
+  user: {
+    type: mongoose.Schema.Types.ObjectId, // user associated with document
+    ref: "User",
+    required: true,
+  },
+  uploadedAt: {
+    // it will hold the timestamp when document is uploaded
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Document", docSchema);
