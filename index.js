@@ -8,15 +8,21 @@ const authRoutes = require("./routes/authRoutes");
 const docRoutes = require("./routes/docRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
+// server.js or app.js
+const signatureRoutes = require("./routes/signature");
 
 //Middleware
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/signed', express.static(path.join(__dirname, 'signed')));
+app.use(express.static(path.join(__dirname, "public")));
 
 //Routes
 app.use("/api/auth", authRoutes);
@@ -24,6 +30,7 @@ app.get("/", (req, res) => {
   res.send("Api is running");
 });
 app.use("/api/docs", docRoutes);
+app.use("/api/signature", signatureRoutes);
 
 // Connect DB
 mongoose
