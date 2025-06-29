@@ -10,7 +10,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 // server.js or app.js
 const signatureRoutes = require("./routes/signature");
-
 //Middleware
 app.use(
   cors({

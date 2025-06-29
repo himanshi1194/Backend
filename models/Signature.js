@@ -27,7 +27,7 @@ const signatureSchema = new mongoose.Schema({
     type: String,
     enum: ["pending", "signed"],
     default: "pending",
-  },
+  }, 
   createdAt: { type: Date, default: Date.now },
   font: {
     type: String,

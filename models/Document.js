@@ -16,6 +16,7 @@ const docSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  signedFile: { type: String },
 });
 
 module.exports = mongoose.model("Document", docSchema);

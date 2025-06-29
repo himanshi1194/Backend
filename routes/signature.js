@@ -122,8 +122,8 @@ router.post("/place", auth, async (req, res) => {
       file: fileId,
       signer: req.user,
       pageNumber,
-      xCoordinate: x, // <-- raw browser x
-      yCoordinate: y, // <-- raw browser y
+      xCoordinate: x, 
+      yCoordinate: y, 
       signature,
       font,
       pdfPageHeight,
@@ -271,7 +271,7 @@ router.post("/finalize", auth, async (req, res) => {
         console.log(
           `Selected font from DB: "${sig.font}" → Normalized: "${normalizedFontName}"`
         );
-
+ 
         const embeddedFont = await pdfDoc.embedFont(fontBytes);
 
         page.drawText(sig.signature, {
@@ -295,6 +295,11 @@ router.post("/finalize", auth, async (req, res) => {
 
     fs.writeFileSync(newFilePath, pdfBytes);
     console.log(`Final singed PDF saved as ${newFilename}`);
+
+    // When you finalize and save the signed PDF, store the path in the Document model:
+    document.signedFile = `signed/${newFilename}`;
+    await document.save();
+
     res.json({
       msg: "Signed PDF generated sucessfully",
       signedFile: `signed/${newFilename}`,
