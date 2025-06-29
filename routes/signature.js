@@ -7,8 +7,10 @@ const Signature = require("../models/Signature");
 const { PDFDocument, rgb, StandardFonts } = require("pdf-lib");
 const Document = require("../models/Document");
 const fontkit = require("@pdf-lib/fontkit");
+// For Aduit Log
+const captureIP = require("../middleware/captureIP");
 
-router.post("/place", auth, async (req, res) => {
+router.post("/place", auth, captureIP, async (req, res) => {
   try {
     const {
       fileId,
@@ -116,14 +118,15 @@ router.post("/place", auth, async (req, res) => {
       file: fileId,
       signer: req.user,
     });
+    console.log(req.signerIp);
 
     // Create new signature
     const newSignature = new Signature({
       file: fileId,
       signer: req.user,
       pageNumber,
-      xCoordinate: x, 
-      yCoordinate: y, 
+      xCoordinate: x,
+      yCoordinate: y,
       signature,
       font,
       pdfPageHeight,
@@ -132,6 +135,7 @@ router.post("/place", auth, async (req, res) => {
       renderedPageWidth: renderedPageWidth
         ? parseFloat(renderedPageWidth)
         : null,
+      ipAddress: req.signerIp,
       status: "pending",
     });
 
@@ -178,7 +182,6 @@ router.get("/file/:fileId", auth, async (req, res) => {
 router.post("/finalize", auth, async (req, res) => {
   try {
     const { fileId } = req.body;
-    console.log("Finalize Body", req.body);
 
     if (!fileId) {
       return res.status(400).json({ msg: "Missing file" });
@@ -186,14 +189,9 @@ router.post("/finalize", auth, async (req, res) => {
     const document = await Document.findById(fileId);
     if (!document) {
       return res.status(400).json({ msg: "Document not found" });
-    }
-    const signaure = await Signature.find({ file: fileId, status: "pending" });
+    } // Fetch pending signatures
 
-    if (!signaure) {
-      return res
-        .status(400)
-        .json({ msg: "No signature found for this document" });
-    }
+    const signaure = await Signature.find({ file: fileId, status: "pending" });
 
     // Load the orignal path from uploads folder
     const orignalPath = path.join(__dirname, "..", document.filepath);
@@ -256,8 +254,9 @@ router.post("/finalize", auth, async (req, res) => {
         const scaleY = pdfHeight / browserHeight;
         const scaleX = pdfWidth / browserWidth;
 
+        // Convert browser (top-left origin) to PDF (bottom-left origin)
         const pdfX = sig.xCoordinate * scaleX;
-        const pdfY = pdfHeight - (sig.yCoordinate * scaleY);
+        const pdfY = pdfHeight - sig.yCoordinate * scaleY;
 
         // Get the font bytes for this signature
         function normalizeFontName(fontName) {
@@ -268,16 +267,15 @@ router.post("/finalize", auth, async (req, res) => {
         const normalizedFontName = normalizeFontName(sig.font);
         const fontBytes =
           availableFonts[normalizedFontName] || availableFonts.Default;
-        console.log(
-          `Selected font from DB: "${sig.font}" → Normalized: "${normalizedFontName}"`
-        );
- 
+
         const embeddedFont = await pdfDoc.embedFont(fontBytes);
 
+        const fontSize = 20;
+        const ascent = embeddedFont.heightAtSize(fontSize);
         page.drawText(sig.signature, {
           x: pdfX,
-          y: pdfY,
-          size: 20,
+          y: pdfY - ascent, // Use ascent instead of fontSize * 0.8
+          size: fontSize,
           font: embeddedFont,
           color: rgb(0, 0, 0),
         });
@@ -294,7 +292,6 @@ router.post("/finalize", auth, async (req, res) => {
     await Signature.deleteMany({ file: fileId, status: "pending" });
 
     fs.writeFileSync(newFilePath, pdfBytes);
-    console.log(`Final singed PDF saved as ${newFilename}`);
 
     // When you finalize and save the signed PDF, store the path in the Document model:
     document.signedFile = `signed/${newFilename}`;
@@ -348,6 +345,22 @@ router.delete("/remove/:signatureId", auth, async (req, res) => {
   } catch (error) {
     console.error("Error removing signature:", error);
     res.status(500).json({ msg: "Failed to remove signature" });
+  }
+});
+
+//Audit Route
+router.get("/audit/:fileID", auth, async (req, res) => {
+  try {
+    const fileid = req.params.fileID;
+
+    const audit = await Signature.find({ file: fileid })
+      .populate("signer", "name email")
+      .select("signer signedAt ipAddress");
+ 
+    res.json(audit);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Server Error" });
   }
 });
 
