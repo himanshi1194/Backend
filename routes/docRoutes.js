@@ -65,6 +65,43 @@ router.get("/signed", auth, async (req, res) => {
     res.status(500).json({ msg: "Server error", error: error.message });
   }
 });
+router.get("/rejected", auth, async (req, res) => {
+  try {
+    // Find all rejected signatures for this user
+    const rejectedSignatures = await Signature.find({
+      signer: req.user,
+      status: "rejected",
+    });
+
+    // Get unique document IDs
+    const docIds = [
+      ...new Set(rejectedSignatures.map((sig) => sig.file.toString())),
+    ];
+
+    // Fetch the documents
+    const docs = await Document.find({ _id: { $in: docIds } }).sort({
+      uploadedAt: -1,
+    });
+
+    // Attach rejectReason to each doc (from the first matching signature)
+    const docsWithReason = docs.map((doc) => {
+      const sig = rejectedSignatures.find(
+        (s) => s.file.toString() === doc._id.toString()
+      );
+      return {
+        ...doc.toObject(),
+        rejectReason: sig ? sig.rejectReason : "",
+      };
+    });
+
+    res.json(docsWithReason);
+    console.log(docsWithReason);
+    
+  } catch (error) {
+    console.error("Rejected docs error:", error);
+    res.status(500).json({ msg: "Server error", error: error.message });
+  }
+});
 
 // DELETE /api/docs/:id
 router.delete("/:id", auth, async (req, res) => {

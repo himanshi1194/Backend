@@ -17,6 +17,11 @@ const docSchema = new mongoose.Schema({
     default: Date.now,
   },
   signedFile: { type: String },
+  status: {
+    type: String,
+    enum: ["pending", "signed", "rejected"],
+    default: "pending",
+  },
 });
 
 module.exports = mongoose.model("Document", docSchema);

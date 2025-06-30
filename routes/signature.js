@@ -191,7 +191,10 @@ router.post("/finalize", auth, async (req, res) => {
       return res.status(400).json({ msg: "Document not found" });
     } // Fetch pending signatures
 
-    const signaure = await Signature.find({ file: fileId, status: "pending" });
+    const signaure = await Signature.find({ 
+      file: fileId, 
+      status: { $in: ["pending", "signed"] } 
+    });
 
     // Load the orignal path from uploads folder
     const orignalPath = path.join(__dirname, "..", document.filepath);
@@ -364,4 +367,43 @@ router.get("/audit/:fileID", auth, async (req, res) => {
   }
 });
 
+// Status Managment reason for accept the signed file
+router.post("/accept/:id",auth,async (req,res) => {
+  try {
+    const signature = await Signature.findById(req.params.id);
+    if (!signature) {
+      return res.status(404).json({msg: "Signature not found"})
+    }
+    signature.status = "signed";
+    signature.signedAt = new Date();
+
+    await signature.save()
+    // Upadating documents status
+    await Document.findByIdAndUpdate(signature.file, {status: "signed"})
+    res.json({msg: "Signature Accepted"})
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({msg: "Serve error"})
+  }
+})
+// Status Managment Reson for reject the signed file
+router.post("/reject/:id", auth, async (req,res)=>{
+  try {
+    const {reason} = req.body;
+    const signature = await Signature.findById(req.params.id);
+    if (!signature) {
+      return res.status(404).json({msg: "Signature not found"})
+    }
+    signature.status = "rejected";
+    signature.rejectReason = reason;
+
+    await signature.save();
+    await Document.findByIdAndUpdate(signature.file, {status: "rejected"})
+    res.json({msg: "Signature rejected"})
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({msg: "Server error"})
+    
+  }
+})
 module.exports = router;

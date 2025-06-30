@@ -24,10 +24,14 @@ const signatureSchema = new mongoose.Schema({
     required: true,
   },
   status: {
-    type: String,
-    enum: ["pending", "signed"],
-    default: "pending",
-  },
+  type: String,
+  enum: ["pending", "signed", "rejected"],
+  default: "pending"
+},
+rejectReason: {
+  type: String,
+  default: ""
+},
   font: {
     type: String,
     default: "cursive",
