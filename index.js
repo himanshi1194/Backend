@@ -13,7 +13,7 @@ const signatureRoutes = require("./routes/signature");
 //Middleware
 app.use(
   cors({
-    origin: "https://melodious-sawine-21ea88.netlify.app/",
+    origin: "https://melodious-sawine-21ea88.netlify.app",
     credentials: true,  
   })
 );
